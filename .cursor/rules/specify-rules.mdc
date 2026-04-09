@@ -1,0 +1,35 @@
+---
+description: 
+alwaysApply: true
+---
+
+# workSpace03 Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-04-09
+
+## Active Technologies
+
+- Python 3.11+（优先 Anaconda 环境）、TypeScript + Vue3 + FastAPI、Pydantic、SQLAlchemy、Uvicorn、LangChain、OpenAI SDK、Vue3、Pinia、Vue Router、Axios、ECharts (001-ai-enterprise-platform)
+
+## Project Structure
+
+```text
+backend/
+frontend/
+tests/
+```
+
+## Commands
+
+cd src; pytest; ruff check .
+
+## Code Style
+
+Python 3.11+（优先 Anaconda 环境）、TypeScript + Vue3: Follow standard conventions
+
+## Recent Changes
+
+- 001-ai-enterprise-platform: Added Python 3.11+（优先 Anaconda 环境）、TypeScript + Vue3 + FastAPI、Pydantic、SQLAlchemy、Uvicorn、LangChain、OpenAI SDK、Vue3、Pinia、Vue Router、Axios、ECharts
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

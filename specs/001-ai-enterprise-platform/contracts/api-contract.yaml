@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: AI Enterprise Platform Contract
+  version: 0.1.0
+  description: Core interface contract for dialogue operations, approvals, query, and knowledge QA.
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/v1/chat/operate:
+    post:
+      summary: 对话式业务操作入口
+      operationId: chatOperate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatOperateRequest"
+      responses:
+        "200":
+          description: 操作受理成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatOperateResponse"
+  /api/v1/workflows/{workflowId}/approve:
+    post:
+      summary: 审批动作提交
+      operationId: approveWorkflow
+      parameters:
+        - in: path
+          name: workflowId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalActionRequest"
+      responses:
+        "200":
+          description: 审批结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalActionResponse"
+  /api/v1/query/ask:
+    post:
+      summary: 自然语言数据问答
+      operationId: askData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DataQueryRequest"
+      responses:
+        "200":
+          description: 查询结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataQueryResponse"
+  /api/v1/knowledge/ask:
+    post:
+      summary: 企业知识问答
+      operationId: askKnowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KnowledgeAskRequest"
+      responses:
+        "200":
+          description: 问答结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeAskResponse"
+components:
+  schemas:
+    ChatOperateRequest:
+      type: object
+      required: [sessionId, employeeId, message]
+      properties:
+        sessionId:
+          type: string
+        employeeId:
+          type: string
+        message:
+          type: string
+        idempotencyKey:
+          type: string
+    ChatOperateResponse:
+      type: object
+      required: [requestId, status, reply]
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, success, failed, needs_more_info]
+        reply:
+          type: string
+        nextRequiredFields:
+          type: array
+          items:
+            type: string
+    ApprovalActionRequest:
+      type: object
+      required: [approverId, action]
+      properties:
+        approverId:
+          type: string
+        action:
+          type: string
+          enum: [approve, reject, transfer, comment]
+        comment:
+          type: string
+        idempotencyKey:
+          type: string
+    ApprovalActionResponse:
+      type: object
+      required: [workflowId, status, version]
+      properties:
+        workflowId:
+          type: string
+        status:
+          type: string
+          enum: [running, approved, rejected, cancelled]
+        version:
+          type: integer
+    DataQueryRequest:
+      type: object
+      required: [employeeId, question]
+      properties:
+        employeeId:
+          type: string
+        question:
+          type: string
+    DataQueryResponse:
+      type: object
+      required: [queryId, status]
+      properties:
+        queryId:
+          type: string
+        status:
+          type: string
+          enum: [success, failed, forbidden]
+        summary:
+          type: string
+        data:
+          type: object
+    KnowledgeAskRequest:
+      type: object
+      required: [employeeId, question]
+      properties:
+        employeeId:
+          type: string
+        question:
+          type: string
+    KnowledgeAskResponse:
+      type: object
+      required: [answer, citations]
+      properties:
+        answer:
+          type: string
+        citations:
+          type: array
+          items:
+            type: object
+            properties:
+              source:
+                type: string
+              fragment:
+                type: string

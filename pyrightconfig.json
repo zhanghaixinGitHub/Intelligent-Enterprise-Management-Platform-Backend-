@@ -1,0 +1,25 @@
+{
+  // 让 Pylance/pyright 在当前工程稳定索引，提升 Ctrl+左键 跳转成功率
+  "include": [
+    "app",
+    "scripts",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".git",
+    ".idea",
+    ".cursor",
+    ".conda/py311/pkgs"
+  ],
+  "venvPath": ".conda",
+  "venv": "py311",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}

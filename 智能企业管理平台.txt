@@ -1,0 +1,16 @@
+绿箭头启动配置：
+    1) Name（名称）
+        填：backend-uvicorn
+    2) 运行类型（左侧 script 那个下拉）
+        改成：module（模块）
+    3) Module name（模块名）
+        填：uvicorn
+    4) Parameters（参数）
+        填：app.main:app --host 0.0.0.0 --port 8002 --reload
+    5) Working directory（工作目录）
+        填：D:\pyCharmProjects\workSpace03
+    6) Environment variables（环境变量）
+        填：PYTHONUNBUFFERED=1，PYTHONPATH=D:\pyCharmProjects\workSpace03
+    7) Paths to '.env' files
+        填：D:\pyCharmProjects\workSpace03\.env
+    然后点 Run 即可。

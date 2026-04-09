@@ -1,0 +1,18 @@
+[
+  {
+    "source": "hr_policy.md",
+    "fragment": "年假按工龄分档：1-10天不等，需提前发起审批。"
+  },
+  {
+    "source": "expense_policy.md",
+    "fragment": "差旅餐费报销需上传票据，审批通过后进入财务打款。"
+  },
+  {
+    "source": "attendance_policy.md",
+    "fragment": "考勤异常可在3个工作日内提交补卡申请。"
+  },
+  {
+    "source": "workflow_guide.md",
+    "fragment": "采购申请超过5000元需额外加审。"
+  }
+]
