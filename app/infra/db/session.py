@@ -6,7 +6,8 @@ from app.infra.config.settings import settings
 
 
 db_path = Path(settings.sqlite_db_path)
-db_path.parent.mkdir(parents=True, exist_ok=True)
+if not db_path.parent.exists():
+    db_path.parent.mkdir(parents=True, exist_ok=True)
 
 DATABASE_URL = f"sqlite:///{db_path.as_posix()}"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
