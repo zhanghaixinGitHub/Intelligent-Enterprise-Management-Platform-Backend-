@@ -14,3 +14,5 @@
     7) Paths to '.env' files
         填：D:\pyCharmProjects\workSpace03\.env
     然后点 Run 即可。
+
+前端代码：D:\webStormProjects\workSpace06
