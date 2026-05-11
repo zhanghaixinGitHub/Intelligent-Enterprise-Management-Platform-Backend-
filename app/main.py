@@ -4,8 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.middleware.authz_middleware import AuthzMiddleware
 from app.api.middleware.audit_middleware import AuditMiddleware
 from app.api.router import api_router
+from app.domain.models.auth_models import UserAccount  # noqa: F401
 from app.infra.config.settings import settings
-from app.infra.db.session import Base, engine
+from app.infra.db.session import Base, SessionLocal, engine
 
 # 导入模型用于建表
 from app.domain.models.conversation_session import ConversationSession  # noqa: F401
@@ -17,9 +18,17 @@ from app.domain.models.query_knowledge_models import QueryTask, KnowledgeEntry  
 from app.domain.models.meeting_minutes import MeetingMinutes  # noqa: F401
 from app.domain.models.attendance_record import AttendanceRecord  # noqa: F401
 from app.domain.models.audit_log import AuditLog  # noqa: F401
+from app.domain.services.auth_service import auth_service
 
 
 Base.metadata.create_all(bind=engine)
+
+# 启动时做一次幂等初始化，保证本地环境开箱即可登录演示账号。
+_bootstrap_db = SessionLocal()
+try:
+    auth_service.ensure_seed_data(_bootstrap_db)
+finally:
+    _bootstrap_db.close()
 
 app = FastAPI(title=settings.app_name)
 # 使用全局 CORS 中间件统一处理跨域，后续新增接口会自动继承这套策略。

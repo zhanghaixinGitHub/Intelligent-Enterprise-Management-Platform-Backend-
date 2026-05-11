@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.dependencies.security import CurrentUserContext, get_current_user
 from app.api.schemas.common import ApprovalActionRequest
 from app.domain.services.approval_service import ApprovalService
 from app.domain.services.notification_service import NotificationService
@@ -11,7 +12,11 @@ notification_service = NotificationService()
 
 
 @router.post("/{workflow_id}/approve")
-def approve_workflow(workflow_id: str, payload: ApprovalActionRequest):
+def approve_workflow(
+    workflow_id: str,
+    payload: ApprovalActionRequest,
+    current_user: CurrentUserContext = Depends(get_current_user),
+):
     result = approval_service.approve(
         workflow_id=workflow_id,
         action=payload.action,
@@ -19,5 +24,5 @@ def approve_workflow(workflow_id: str, payload: ApprovalActionRequest):
         current_version=1,
         comment=payload.comment,
     )
-    notification_service.send(payload.approverId, "approval", {"workflowId": workflow_id, "status": result["status"]})
+    notification_service.send(current_user.employeeId, "approval", {"workflowId": workflow_id, "status": result["status"]})
     return result

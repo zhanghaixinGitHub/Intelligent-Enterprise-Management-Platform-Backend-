@@ -10,7 +10,7 @@ class ApiResponse(BaseModel):
 
 class ChatOperateRequest(BaseModel):
     sessionId: str
-    employeeId: str
+    employeeId: str | None = None
     message: str
     idempotencyKey: str | None = None
 
@@ -23,17 +23,17 @@ class ChatOperateResponse(BaseModel):
 
 
 class ApprovalActionRequest(BaseModel):
-    approverId: str
+    approverId: str | None = None
     action: str
     comment: str | None = None
     idempotencyKey: str | None = None
 
 
 class DataQueryRequest(BaseModel):
-    employeeId: str
+    employeeId: str | None = None
     question: str
 
 
 class KnowledgeAskRequest(BaseModel):
-    employeeId: str
+    employeeId: str | None = None
     question: str

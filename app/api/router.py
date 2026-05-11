@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.routes.auth_routes import router as auth_router
 from app.api.routes.chat_routes import router as chat_router
 from app.api.routes.workflow_routes import router as workflow_router
 from app.api.routes.query_routes import router as query_router
@@ -10,6 +11,7 @@ from app.api.routes.audit_routes import router as audit_router
 
 
 api_router = APIRouter()
+api_router.include_router(auth_router)
 api_router.include_router(chat_router)
 api_router.include_router(workflow_router)
 api_router.include_router(query_router)

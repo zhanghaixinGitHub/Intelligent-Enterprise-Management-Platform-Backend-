@@ -36,6 +36,8 @@ class Settings:
     app_env: str = os.getenv("APP_ENV", "dev")
     app_host: str = os.getenv("APP_HOST", "0.0.0.0")
     app_port: int = int(os.getenv("APP_PORT", "8000"))
+    auth_token_secret: str = os.getenv("AUTH_TOKEN_SECRET", "ai-enterprise-demo-secret")
+    auth_token_expire_minutes: int = int(os.getenv("AUTH_TOKEN_EXPIRE_MINUTES", "480"))
     sqlite_db_path: str = os.getenv(
         "SQLITE_DB_PATH",
         str(PROJECT_ROOT / "data" / "ai_enterprise.db"),
@@ -51,6 +53,8 @@ class Settings:
             [
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
+                "http://localhost:5175",
+                "http://127.0.0.1:5175",
                 "http://localhost:8080",
                 "http://127.0.0.1:8080",
                 "http://localhost:3000",
