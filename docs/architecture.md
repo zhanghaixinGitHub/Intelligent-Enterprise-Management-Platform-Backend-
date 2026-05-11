@@ -19,3 +19,9 @@
 - 请求幂等键去重（避免重复提交）
 - 乐观锁版本校验（避免并发审批冲突）
 - 统一审计日志（可追溯）
+
+## 架构演进文档
+
+- `docs/flowable-distributed-architecture.md`：Python + Java Flowable 分布式演进架构方案
+- `docs/service-split-plan.md`：基于当前代码结构的 Python 保留 / Java 迁移拆分清单
+
