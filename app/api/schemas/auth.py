@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 
@@ -23,6 +25,7 @@ class MenuPermission(BaseModel):
     path: str
     icon: str
     order: int
+    children: list["MenuPermission"] = Field(default_factory=list)
 
 
 class LoginResponse(BaseModel):
@@ -33,6 +36,7 @@ class LoginResponse(BaseModel):
     user: AuthUser
     menus: list[MenuPermission] = Field(default_factory=list)
     homePath: str = "/403"
+    actionScopes: list[str] = Field(default_factory=list)
 
 
 class CurrentUserResponse(BaseModel):
@@ -44,4 +48,8 @@ class CurrentUserResponse(BaseModel):
 
 class LogoutResponse(BaseModel):
     success: bool = True
+
+
+MenuPermission.model_rebuild()
+
 

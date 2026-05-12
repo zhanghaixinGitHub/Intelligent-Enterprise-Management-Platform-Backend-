@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import secrets
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -94,18 +95,88 @@ class AuthService:
                 )
                 db.add(policy)
                 changed = True
+                continue
+
+            # 这里对角色策略采用“幂等同步”的方式而不是仅首次插入：
+            # 当企业项目的菜单范围、动作范围、数据范围随着架构演进发生变化时，
+            # 如果只在空表时插入，旧数据库里的策略会永久停留在历史版本，导致新接口无权限或菜单不显示。
+            updated = False
+            if policy.role_code != policy_seed["role_code"]:
+                policy.role_code = policy_seed["role_code"]
+                updated = True
+            if policy.menu_scopes != policy_seed["menu_scopes"]:
+                policy.menu_scopes = policy_seed["menu_scopes"]
+                updated = True
+            if policy.action_scopes != policy_seed["action_scopes"]:
+                policy.action_scopes = policy_seed["action_scopes"]
+                updated = True
+            if policy.data_scopes != policy_seed["data_scopes"]:
+                policy.data_scopes = policy_seed["data_scopes"]
+                updated = True
+            if policy.enabled != "true":
+                policy.enabled = "true"
+                updated = True
+
+            if updated:
+                changed = True
 
         if changed:
             db.commit()
-            self._logger.info("ensure_seed_data", "初始化默认账号与权限策略完成")
+            self._logger.info("ensure_seed_data", "初始化或同步默认账号与权限策略完成")
 
     def _build_menu_list(self, menu_keys: list[str]) -> list[dict[str, Any]]:
         if "*" in menu_keys:
-            return [dict(item) for item in MENU_CATALOG]
+            return self._clone_menu_items(MENU_CATALOG)
 
         allowed_key_set = set(menu_keys)
-        filtered = [dict(item) for item in MENU_CATALOG if str(item["key"]) in allowed_key_set]
-        return sorted(filtered, key=lambda item: int(item["order"]))
+        return self._filter_menu_items(MENU_CATALOG, allowed_key_set)
+
+    def _clone_menu_items(self, items: list[dict[str, object]]) -> list[dict[str, Any]]:
+        cloned_items = [cast(dict[str, Any], deepcopy(item)) for item in items]
+        for item in cloned_items:
+            children = item.get("children")
+            if isinstance(children, list):
+                item["children"] = sorted(children, key=lambda child: int(cast(dict[str, Any], child)["order"]))
+        return sorted(cloned_items, key=lambda item: int(item["order"]))
+
+    def _filter_menu_items(self, items: list[dict[str, object]], allowed_key_set: set[str]) -> list[dict[str, Any]]:
+        filtered_items: list[dict[str, Any]] = []
+        for item in sorted(items, key=lambda current: int(current["order"])):
+            item_key = str(item["key"])
+            raw_children = item.get("children")
+            child_items = [cast(dict[str, object], child) for child in raw_children] if isinstance(raw_children, list) else []
+            filtered_children = self._filter_menu_items(child_items, allowed_key_set) if child_items else []
+
+            if item_key not in allowed_key_set and not filtered_children:
+                continue
+
+            cloned_item = cast(dict[str, Any], deepcopy(item))
+            cloned_item["children"] = filtered_children
+            filtered_items.append(cloned_item)
+        return filtered_items
+
+    def _flatten_menu_keys(self, items: list[dict[str, Any]]) -> list[str]:
+        collected_keys: list[str] = []
+        for item in items:
+            collected_keys.append(str(item["key"]))
+            children = item.get("children")
+            if isinstance(children, list) and children:
+                collected_keys.extend(self._flatten_menu_keys([cast(dict[str, Any], child) for child in children]))
+        return collected_keys
+
+    def _resolve_home_path(self, items: list[dict[str, Any]]) -> str:
+        for item in items:
+            children = item.get("children")
+            if isinstance(children, list) and children:
+                child_home_path = self._resolve_home_path([cast(dict[str, Any], child) for child in children])
+                if child_home_path:
+                    return child_home_path
+
+            path = str(item.get("path", "")).strip()
+            if path:
+                return path
+
+        return "/403"
 
     def resolve_permissions(self, db: Session, role_codes: list[str]) -> dict[str, Any]:
         policies = (
@@ -119,8 +190,8 @@ class AuthService:
         menu_scope_set: set[str] = set()
         action_scope_set: set[str] = set()
         for policy in policies:
-            menu_scope_set.update(self._split_csv(policy.menu_scopes))
-            action_scope_set.update(self._split_csv(policy.action_scopes))
+            menu_scope_set.update(self._split_csv(cast(str | None, cast(object, policy.menu_scopes))))
+            action_scope_set.update(self._split_csv(cast(str | None, cast(object, policy.action_scopes))))
 
         if "*" in menu_scope_set:
             menu_keys = ["*"]
@@ -133,11 +204,12 @@ class AuthService:
             action_scopes = sorted(action_scope_set)
 
         menus = self._build_menu_list(menu_keys)
-        home_path = str(menus[0]["path"]) if menus else "/403"
+        home_path = self._resolve_home_path(menus)
+        flattened_menu_keys = self._flatten_menu_keys(menus)
 
         return {
             "menus": menus,
-            "menuKeys": [str(item["key"]) for item in menus],
+            "menuKeys": flattened_menu_keys,
             "actionScopes": action_scopes,
             "homePath": home_path,
         }
@@ -147,7 +219,7 @@ class AuthService:
         if employee is None or employee.status != "active":
             raise HTTPException(status_code=401, detail="当前账号关联的员工已停用")
 
-        role_codes = self._split_csv(employee.role_codes)
+        role_codes = self._split_csv(cast(str | None, cast(object, employee.role_codes)))
         permissions = self.resolve_permissions(db, role_codes)
         user = {
             "employeeId": employee.employee_id,
@@ -180,11 +252,15 @@ class AuthService:
             self._logger.error("login", "登录失败，账号不存在或已停用", username=username)
             raise HTTPException(status_code=401, detail="用户名或密码错误")
 
-        if not self._verify_password(password, account.password_hash):
+        if not self._verify_password(password, cast(str, cast(object, account.password_hash))):
             self._logger.error("login", "登录失败，密码校验不通过", username=username)
             raise HTTPException(status_code=401, detail="用户名或密码错误")
 
-        session_context = self.build_user_context(db, employee_id=account.employee_id, username=account.username)
+        session_context = self.build_user_context(
+            db,
+            employee_id=cast(str, cast(object, account.employee_id)),
+            username=cast(str, cast(object, account.username)),
+        )
         token_result = token_service.create_token(
             {
                 "tokenId": str(uuid4()),
@@ -198,6 +274,7 @@ class AuthService:
             "user": session_context["user"],
             "menus": session_context["menus"],
             "homePath": session_context["homePath"],
+            "actionScopes": session_context["actionScopes"],
         }
 
     def get_current_user_info(self, db: Session, token_payload: dict[str, Any]) -> dict[str, Any]:

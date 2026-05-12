@@ -25,11 +25,53 @@ MENU_CATALOG: Final[list[dict[str, object]]] = [
     },
     {
         "key": "workflow",
-        "title": "审批待办",
-        "desc": "审批流转与处理",
+        "title": "我的流程",
+        "desc": "流程发起、待办处理与过程跟踪",
         "path": "/workflow",
         "icon": "List",
         "order": 30,
+        "children": [
+            {
+                "key": "workflow-create",
+                "title": "新建流程",
+                "desc": "选择可用流程模板并发起新的业务流程",
+                "path": "/workflow/create",
+                "icon": "CirclePlus",
+                "order": 1,
+            },
+            {
+                "key": "workflow-todo",
+                "title": "待办事宜",
+                "desc": "查看并处理当前账号待办任务",
+                "path": "/workflow/todo",
+                "icon": "Tickets",
+                "order": 2,
+            },
+            {
+                "key": "workflow-requests",
+                "title": "我的请求",
+                "desc": "查看我发起的流程与当前进度",
+                "path": "/workflow/requests",
+                "icon": "Document",
+                "order": 3,
+            },
+            {
+                "key": "workflow-monitor",
+                "title": "流程监控",
+                "desc": "用于管理角色跟踪流程运行情况",
+                "path": "/workflow/monitor",
+                "icon": "Monitor",
+                "order": 4,
+            },
+            {
+                "key": "workflow-recycle",
+                "title": "流程回收站",
+                "desc": "查看已撤回、已归档或待恢复流程",
+                "path": "/workflow/recycle-bin",
+                "icon": "DeleteFilled",
+                "order": 5,
+            },
+        ],
     },
     {
         "key": "dialog",
@@ -49,8 +91,20 @@ MENU_CATALOG: Final[list[dict[str, object]]] = [
     },
 ]
 
-MENU_MAP: Final[dict[str, dict[str, object]]] = {item["key"]: item for item in MENU_CATALOG}
-MENU_KEYS: Final[set[str]] = {item["key"] for item in MENU_CATALOG}
+
+def _flatten_menu_catalog(items: list[dict[str, object]]) -> list[dict[str, object]]:
+    flattened: list[dict[str, object]] = []
+    for item in items:
+        flattened.append(item)
+        children = item.get("children")
+        if isinstance(children, list):
+            flattened.extend(_flatten_menu_catalog([child for child in children if isinstance(child, dict)]))
+    return flattened
+
+
+FLATTENED_MENU_CATALOG: Final[list[dict[str, object]]] = _flatten_menu_catalog(MENU_CATALOG)
+MENU_MAP: Final[dict[str, dict[str, object]]] = {str(item["key"]): item for item in FLATTENED_MENU_CATALOG}
+MENU_KEYS: Final[set[str]] = {str(item["key"]) for item in FLATTENED_MENU_CATALOG}
 
 ROLE_POLICY_SEEDS: Final[list[dict[str, str]]] = [
     {
@@ -63,22 +117,22 @@ ROLE_POLICY_SEEDS: Final[list[dict[str, str]]] = [
     {
         "policy_id": "policy-hr",
         "role_code": "hr",
-        "menu_scopes": "dashboard,attendance,insight",
-        "action_scopes": "dashboard:view,attendance:view,attendance:clock-in,insight:data,insight:knowledge",
+        "menu_scopes": "dashboard,attendance,workflow,workflow-create,workflow-todo,workflow-requests,workflow-monitor,workflow-recycle,insight",
+        "action_scopes": "dashboard:view,attendance:view,attendance:clock-in,workflow:view,workflow:start,workflow:task:complete,workflow:monitor:view,workflow:recycle:view,insight:data,insight:knowledge",
         "data_scopes": "self,department",
     },
     {
         "policy_id": "policy-manager",
         "role_code": "manager",
-        "menu_scopes": "dashboard,workflow,dialog,insight",
-        "action_scopes": "dashboard:view,workflow:approve,dialog:use,insight:data,insight:knowledge",
+        "menu_scopes": "dashboard,workflow,workflow-create,workflow-todo,workflow-requests,workflow-monitor,dialog,insight",
+        "action_scopes": "dashboard:view,workflow:view,workflow:start,workflow:task:complete,workflow:approve,workflow:monitor:view,dialog:use,insight:data,insight:knowledge",
         "data_scopes": "self,team",
     },
     {
         "policy_id": "policy-employee",
         "role_code": "employee",
-        "menu_scopes": "attendance,dialog,insight",
-        "action_scopes": "attendance:view,attendance:clock-in,dialog:use,insight:data,insight:knowledge",
+        "menu_scopes": "attendance,workflow,workflow-create,workflow-todo,workflow-requests,dialog,insight",
+        "action_scopes": "attendance:view,attendance:clock-in,workflow:view,workflow:start,dialog:use,insight:data,insight:knowledge",
         "data_scopes": "self",
     },
 ]
@@ -138,10 +192,14 @@ PUBLIC_PATHS: Final[set[str]] = {
     "/api/v1/auth/login",
 }
 
-ACTION_RULES: Final[list[dict[str, object]]] = [
+ACTION_RULES: Final[list[dict[str, str | re.Pattern[str]]]] = [
     {"method": "GET", "pattern": re.compile(r"^/api/v1/dashboard/overview$"), "action": "dashboard:view"},
     {"method": "POST", "pattern": re.compile(r"^/api/v1/attendance/clock-in$"), "action": "attendance:clock-in"},
     {"method": "GET", "pattern": re.compile(r"^/api/v1/attendance/monthly-summary$"), "action": "attendance:view"},
+    {"method": "GET", "pattern": re.compile(r"^/api/v1/workflows/process-definitions$"), "action": "workflow:view"},
+    {"method": "POST", "pattern": re.compile(r"^/api/v1/workflows/process-instances/start$"), "action": "workflow:start"},
+    {"method": "GET", "pattern": re.compile(r"^/api/v1/workflows/tasks/my$"), "action": "workflow:view"},
+    {"method": "POST", "pattern": re.compile(r"^/api/v1/workflows/tasks/[^/]+/complete$"), "action": "workflow:task:complete"},
     {"method": "POST", "pattern": re.compile(r"^/api/v1/workflows/[^/]+/approve$"), "action": "workflow:approve"},
     {"method": "POST", "pattern": re.compile(r"^/api/v1/chat/operate$"), "action": "dialog:use"},
     {"method": "POST", "pattern": re.compile(r"^/api/v1/query/ask$"), "action": "insight:data"},
@@ -157,7 +215,8 @@ def resolve_action_scope(method: str, path: str) -> str | None:
     for rule in ACTION_RULES:
         if method.upper() != rule["method"]:
             continue
-        if rule["pattern"].match(path):
+        pattern = rule["pattern"]
+        if isinstance(pattern, re.Pattern) and pattern.match(path):
             return str(rule["action"])
     return None
 

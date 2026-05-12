@@ -42,6 +42,10 @@ class Settings:
         "SQLITE_DB_PATH",
         str(PROJECT_ROOT / "data" / "ai_enterprise.db"),
     )
+    workflow_center_base_url: str = os.getenv("WORKFLOW_CENTER_BASE_URL", "http://127.0.0.1:8081")
+    workflow_center_internal_token: str = os.getenv("WORKFLOW_CENTER_INTERNAL_TOKEN", "change-me-in-prod")
+    workflow_center_connect_timeout_seconds: float = float(os.getenv("WORKFLOW_CENTER_CONNECT_TIMEOUT_SECONDS", "3"))
+    workflow_center_read_timeout_seconds: float = float(os.getenv("WORKFLOW_CENTER_READ_TIMEOUT_SECONDS", "10"))
     openai_base_url: str = os.getenv("OPENAI_BASE_URL", "https://api.openai-proxy.org/v1")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
