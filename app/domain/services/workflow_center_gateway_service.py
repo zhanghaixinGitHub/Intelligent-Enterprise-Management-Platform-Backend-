@@ -50,7 +50,8 @@ class WorkflowCenterGatewayService:
             "managerAssignee": payload.managerAssignee,
             "hrAssignee": payload.hrAssignee,
             "businessKey": payload.businessKey,
-            "title": payload.title,
+            "leaveReason": payload.leaveReason,
+            "leaveTime": payload.leaveTime,
             "variables": payload.variables,
         }
         try:

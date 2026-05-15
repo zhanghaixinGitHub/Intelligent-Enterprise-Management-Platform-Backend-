@@ -27,15 +27,22 @@ class WorkflowProcessDefinitionListResponse(BaseModel):
 class WorkflowStartProcessRequest(BaseModel):
     """发起流程请求。
 
-    当前阶段仍然要求前端显式传主管审批人与 HR 办理人，这是为了在组织架构中心尚未打通前，
-    先保证 Python 平台到 Java Flowable 的跨服务审批链路可运行、可验证、可演进。
+    修改说明：
+    1. managerAssignee 和 hrAssignee 改为可选字段，由后端自动获取或提供默认值
+    2. businessKey 改为可选字段，由后端自动生成
+    3. 将 title 字段替换为 leaveReason（请假原因），语义更明确
+    4. 新增 leaveTime（请假时间）字段
+
+    设计模式：数据传输对象模式（DTO Pattern）
+    用于在不同服务层之间传输数据，提供稳定的接口契约。
     """
 
     processDefinitionKey: str
-    managerAssignee: str
-    hrAssignee: str
+    managerAssignee: str | None = None
+    hrAssignee: str | None = None
     businessKey: str | None = None
-    title: str | None = None
+    leaveReason: str | None = None
+    leaveTime: str | None = None
     variables: dict[str, Any] = Field(default_factory=dict)
 
 
