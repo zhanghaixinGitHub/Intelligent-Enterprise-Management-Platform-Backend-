@@ -54,6 +54,14 @@ class WorkflowCenterClient:
     def complete_task(self, task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         return self._request("POST", f"/api/v1/workflows/tasks/{task_id}/complete", json=payload)
 
+    def list_user_requests(self, initiator: str) -> list[dict[str, Any]]:
+        """查询用户发起的流程请求列表。
+
+        设计模式：适配器模式（Adapter Pattern）
+        封装对Java Flowable后端的HTTP调用，屏蔽底层协议细节。
+        """
+        return self._request("GET", "/api/v1/workflows/requests", params={"initiator": initiator})
+
     def _request(
         self,
         method: str,

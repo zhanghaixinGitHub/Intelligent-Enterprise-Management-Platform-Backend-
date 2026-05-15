@@ -5,6 +5,7 @@ from app.api.schemas.common import ApprovalActionRequest
 from app.api.schemas.workflow import (
     WorkflowCompleteTaskRequest,
     WorkflowCompleteTaskResponse,
+    WorkflowMyRequestsResponse,
     WorkflowMyTasksResponse,
     WorkflowProcessDefinitionListResponse,
     WorkflowStartProcessRequest,
@@ -50,6 +51,17 @@ def start_process_instance(
 def list_my_tasks(current_user: CurrentUserContext = Depends(get_current_user)):
     tasks = workflow_center_gateway_service.list_my_tasks(current_user=current_user)
     return {"tasks": tasks}
+
+
+@router.get("/requests/my", response_model=WorkflowMyRequestsResponse)
+def list_my_requests(current_user: CurrentUserContext = Depends(get_current_user)):
+    """查询我发起的流程请求列表。
+
+    设计模式：数据传输对象模式（DTO Pattern）
+    用于在不同服务层之间传输数据，提供稳定的接口契约。
+    """
+    requests = workflow_center_gateway_service.list_my_requests(current_user=current_user)
+    return {"requests": requests}
 
 
 @router.post("/tasks/{task_id}/complete", response_model=WorkflowCompleteTaskResponse)

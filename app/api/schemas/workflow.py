@@ -85,3 +85,31 @@ class WorkflowCompleteTaskResponse(BaseModel):
     processEnded: bool
     currentTaskNames: list[str] = Field(default_factory=list)
 
+
+class WorkflowRequestItem(BaseModel):
+    """我发起的流程请求项。
+
+    设计模式：数据传输对象模式（DTO Pattern）
+    用于在不同服务层之间传输流程请求数据，提供稳定的接口契约。
+    """
+
+    processInstanceId: str
+    processDefinitionKey: str
+    processDefinitionName: str | None = None
+    businessKey: str | None = None
+    title: str | None = None
+    processStatus: str
+    currentTaskNames: list[str] = Field(default_factory=list)
+    startTime: str | None = None
+    canRevoke: bool = False
+
+
+class WorkflowMyRequestsResponse(BaseModel):
+    """我的流程请求列表响应。
+
+    设计模式：聚合根模式（Aggregate Root Pattern）
+    将相关的流程请求数据聚合为一个响应对象，便于前端统一处理。
+    """
+
+    requests: list[WorkflowRequestItem] = Field(default_factory=list)
+

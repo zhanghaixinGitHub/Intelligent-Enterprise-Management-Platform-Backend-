@@ -139,6 +139,39 @@ class WorkflowCenterGatewayService:
         )
         return result
 
+    def list_my_requests(self, current_user: CurrentUserContext) -> list[dict[str, Any]]:
+        """查询当前用户发起的流程请求列表。
+
+        设计模式：门面模式（Facade Pattern）
+        统一错误映射、日志记录和上下文注入，为路由层提供稳定的接口。
+        """
+        try:
+            requests = self._client.list_user_requests(current_user.employeeId)
+        except WorkflowCenterUnavailableError as exc:
+            self._logger.error(
+                "list_my_requests",
+                "Java 审批中心不可用",
+                employee_id=current_user.employeeId,
+                error=str(exc),
+            )
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except WorkflowCenterIntegrationError as exc:
+            self._logger.error(
+                "list_my_requests",
+                "查询我的请求失败",
+                employee_id=current_user.employeeId,
+                error=str(exc),
+            )
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        self._logger.info(
+            "list_my_requests",
+            "查询我的请求成功",
+            employee_id=current_user.employeeId,
+            count=len(requests),
+        )
+        return requests
+
 
 workflow_center_gateway_service = WorkflowCenterGatewayService()
 
