@@ -34,3 +34,21 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Data and databases
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.mv.db
+*.trace.db
+
+# Additional ignores
+package-lock.json
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+!.env.example
+.DS_Store
+Thumbs.db
